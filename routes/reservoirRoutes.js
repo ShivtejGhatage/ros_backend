@@ -4,6 +4,7 @@ const ReservoirList = require('../models/Reservoirlist')
 const authenticate = require('../middleware/authMiddleware');  // Import the authentication middleware
 const router = express.Router();
 const Notification = require('../models/Notification');  // Import the Notification model
+const mongoose = require('mongoose'); // Add this import at the top of your file
 
 
 // Create a new reservoir (requires authentication)
@@ -55,7 +56,7 @@ router.get('/:id', async (req, res) => {
     }
 
     // Find the reservoir by ID and populate the subdam
-    const reservoir = await Reservoir.findById(reservoirId).populate('subdam');
+    const reservoir = await Reservoir.findById(reservoirId);
 
     if (!reservoir) {
       return res.status(404).json({ message: 'Reservoir not found' });
