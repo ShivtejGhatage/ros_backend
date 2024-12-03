@@ -93,6 +93,10 @@ router.put('/', async (req, res) => {
       ? reservoir.waterLevels[reservoir.waterLevels.length - 1].level 
       : null;
 
+      const previousTimestamp = reservoir.waterLevels.length > 0 
+      ? reservoir.waterLevels[reservoir.waterLevels.length - 1].timestamp 
+      : null;
+
     console.log('Previous Level:', previousLevel, 'New Level:', level);
 
     // Add the new water level to the waterLevels array
@@ -100,6 +104,7 @@ router.put('/', async (req, res) => {
 
     reservoir.waterLevels.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
+    if (previousTimestamp && timestamp > previousTimestamp){
 
     // Check if the new level exceeds dangerL and the previous level did not
     if (previousLevel !== null && previousLevel <= reservoir.dangerL && level > reservoir.dangerL) {
@@ -175,7 +180,7 @@ router.put('/', async (req, res) => {
         return res.status(500).json({ error: 'Failed to save notification' });
       }
     }
-
+  }
     // Save the updated reservoir object
     await reservoir.save();
     res.json(reservoir);
