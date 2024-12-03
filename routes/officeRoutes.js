@@ -276,6 +276,15 @@ router.get('/corporations', async (req, res) => {
     }
   });
 
+  router.get('/dams', async (req, res) => {
+    try {
+      const dams = await Dam.find();
+      res.status(200).json(dams);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   router.get('/dams/:id', async (req, res) => {
     try {
       const damId = req.params.id; // Extract the dam ID from the request parameters
@@ -290,8 +299,6 @@ router.get('/corporations', async (req, res) => {
       res.status(500).json({ error: error.message }); // Handle server errors
     }
   });
-  
-
 
   // Update data for a specific dam
   router.put('/dams', async (req, res) => {
