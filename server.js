@@ -8,8 +8,12 @@ const officeRoutes = require('./routes/officeRoutes')
 const notifRoutes = require('./routes/notifRoutes')
 const app = express();
 const cors = require('cors');
-app.use(cors()); // This will allow all domains, for security use specific origins
 
+app.use(cors({
+  origin: '*',  // Allow all origins (use specific domain in production)
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Middleware
 app.use(bodyParser.json());

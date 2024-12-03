@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
 // Get all reservoirs (public route, no authentication required)
 router.get('/all', async (req, res) => {
   try {
-    const reservoirs = await Reservoir.find();
+    const reservoirs = await Reservoir.find().sort({ timestamp: -1 });
     res.json(reservoirs);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -44,25 +44,37 @@ router.get('/listall', async (req, res) => {
 });
 
 // Get a specific reservoir (public route, no authentication required)
-router.get('', async (req, res) => {
-    try {
-      const { damName, subdamName, reservoirName } = req.body;
-      
-      const reservoir = await Reservoir.findOne({
-        damName,
-        subdamName,
-        reservoirName,
-      });
-  
-      if (!reservoir) {
-        return res.status(404).json({ error: "Reservoir not found" });
-      }
-  
-      res.json(reservoir);  // This returns the entire reservoir object, including water levels
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+// Define the GET route to get reservoir details by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const reservoirId = req.params.id;
+
+    // Check if the ID is a valid mongoose ObjectId
+    if (!mongoose.Types.ObjectId.isValid(reservoirId)) {
+      return res.status(400).json({ message: 'Invalid reservoir ID' });
     }
+
+    // Find the reservoir by ID and populate the subdam
+    const reservoir = await Reservoir.findById(reservoirId).populate('subdam');
+
+    if (!reservoir) {
+      return res.status(404).json({ message: 'Reservoir not found' });
+    }
+
+    // Prepare the response data with the reservoir name and water levels
+    const responseData = {
+      reservoirName: reservoir.name,
+      waterLevels: reservoir.waterLevels
+    };
+
+    // Return the data
+    res.status(200).json(responseData);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
+
 
 // Update water level for a reservoir (requires authentication)
 router.put('/', async (req, res) => {
