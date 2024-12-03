@@ -107,24 +107,7 @@ router.put('/', async (req, res) => {
     if (previousTimestamp && new Date(timestamp) > new Date(previousTimestamp)) {
 
     // Check if the new level exceeds dangerL and the previous level did not
-    if (previousLevel !== null && previousLevel <= reservoir.dangerL && level > reservoir.dangerL) {
-      const message = `Warning: Water level in ${reservoir.name} has exceeded the danger level (${reservoir.dangerL}m). Current level: ${level}m.`;
-      
-      const notification = new Notification({
-        reservoir: reservoir._id,
-        message,
-        color: "Red"
-      });
-
-      try {
-        await notification.save();
-        console.log('Notification sent:', message);
-      } catch (saveError) {
-        console.log('Error saving notification:', saveError.message);
-        return res.status(500).json({ error: 'Failed to save notification' });
-      }
-    }
-
+   
     // Check for alert level
     if (previousLevel !== null && previousLevel <= reservoir.alertL && level > reservoir.alertL) {
       const message = `Warning: Water level in ${reservoir.name} has exceeded the alert level (${reservoir.alertL}m). Current level: ${level}m.`;
@@ -143,6 +126,25 @@ router.put('/', async (req, res) => {
         return res.status(500).json({ error: 'Failed to save notification' });
       }
     }
+
+    if (previousLevel !== null && previousLevel <= reservoir.dangerL && level > reservoir.dangerL) {
+      const message = `Warning: Water level in ${reservoir.name} has exceeded the danger level (${reservoir.dangerL}m). Current level: ${level}m.`;
+      
+      const notification = new Notification({
+        reservoir: reservoir._id,
+        message,
+        color: "Red"
+      });
+
+      try {
+        await notification.save();
+        console.log('Notification sent:', message);
+      } catch (saveError) {
+        console.log('Error saving notification:', saveError.message);
+        return res.status(500).json({ error: 'Failed to save notification' });
+      }
+    }
+
 
     // Check for low level
     if (previousLevel !== null && previousLevel >= reservoir.lowL && level < reservoir.lowL) {

@@ -276,14 +276,21 @@ router.get('/corporations', async (req, res) => {
     }
   });
 
-  router.get('/dams', async (req, res) => {
+  router.get('/dams/:id', async (req, res) => {
     try {
-      const dams = await Dam.find();
-      res.status(200).json(dams);
+      const damId = req.params.id; // Extract the dam ID from the request parameters
+      const dam = await Dam.findById(damId); // Query the database by ID
+  
+      if (!dam) {
+        return res.status(404).json({ error: 'Dam not found' }); // Handle case where dam is not found
+      }
+  
+      res.status(200).json(dam); // Return the found dam
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message }); // Handle server errors
     }
   });
+  
 
 
   // Update data for a specific dam
