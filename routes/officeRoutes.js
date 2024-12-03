@@ -284,6 +284,52 @@ router.get('/corporations', async (req, res) => {
       res.status(500).json({ error: error.message });
     }
   });
+
+
+  // Update data for a specific dam
+  router.put('/dams', async (req, res) => {
+    const { id, timestamp, level, rain, totalPaaniSatha, visarg_V, visarg_S, username } = req.body;
+  
+    try {
+      if (!id) {
+        return res.status(400).json({ message: 'Dam ID is required' });
+      }
+  
+      // Create the new data entry
+      const newEntry = {
+        timestamp, // Automatically set the current timestamp
+        level,
+        rain,
+        totalPaaniSatha,
+        visarg_V,
+        visarg_S,
+        username,
+      };
+  
+      // Find the dam and update its data
+      const dam = await Dam.findById(id);
+      if (!dam) {
+        return res.status(404).json({ message: 'Dam not found' });
+      }
+  
+      // Add the new entry to the data array
+      dam.data.push(newEntry);
+  
+      // Sort the data array by timestamp
+      dam.data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  
+      // Save the updated dam document
+      await dam.save();
+  
+      res.status(200).json({ message: 'Data updated successfully', data: dam.data });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  });
+  
+  
+
   
   router.get('/subdams', async (req, res) => {
     try {
