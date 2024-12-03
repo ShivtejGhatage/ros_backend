@@ -98,6 +98,9 @@ router.put('/', async (req, res) => {
     // Add the new water level to the waterLevels array
     reservoir.waterLevels.push({ level, timestamp, rain, username });
 
+    reservoir.waterLevels.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+
     // Check if the new level exceeds dangerL and the previous level did not
     if (previousLevel !== null && previousLevel <= reservoir.dangerL && level > reservoir.dangerL) {
       const message = `Warning: Water level in ${reservoir.name} has exceeded the danger level (${reservoir.dangerL}m). Current level: ${level}m.`;
