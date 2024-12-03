@@ -104,7 +104,7 @@ router.put('/', async (req, res) => {
 
     reservoir.waterLevels.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-    if (previousTimestamp && timestamp > previousTimestamp){
+    if (previousTimestamp && new Date(timestamp) > new Date(previousTimestamp)) {
 
     // Check if the new level exceeds dangerL and the previous level did not
     if (previousLevel !== null && previousLevel <= reservoir.dangerL && level > reservoir.dangerL) {
