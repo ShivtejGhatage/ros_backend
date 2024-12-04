@@ -347,7 +347,7 @@ router.get('/corporations', async (req, res) => {
     }
   });
   
-  router.delete('/dam/:damId/data/:entryId', async (req, res) => {
+  router.delete('/dams/:damId/data/:entryId', async (req, res) => {
     const { damId, entryId } = req.params;
   
     try {
