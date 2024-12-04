@@ -347,7 +347,27 @@ router.get('/corporations', async (req, res) => {
     }
   });
   
+  router.delete('/dam/:damId/data/:entryId', async (req, res) => {
+    const { damId, entryId } = req.params;
   
+    try {
+      // Update the dam document
+      const updatedDam = await Dam.findByIdAndUpdate(
+        damId,
+        { $pull: { data: { _id: entryId } } },
+        { new: true } // Return the updated document
+      );
+  
+      if (!updatedDam) {
+        return res.status(404).json({ message: 'Dam not found' });
+      }
+  
+      res.status(200).json({ message: 'Data entry deleted successfully', dam: updatedDam });
+    } catch (error) {
+      console.error('Error deleting data entry:', error);
+      res.status(500).json({ message: 'Internal server error', error });
+    }
+  });
 
   
   router.get('/subdams', async (req, res) => {

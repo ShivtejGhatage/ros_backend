@@ -215,5 +215,26 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
+router.delete(':reservoirId/waterlevel/:entryId', async (req, res) => {
+  const { reservoirId, entryId } = req.params;
+
+  try {
+    // Update the reservoir document
+    const updatedReservoir = await Reservoir.findByIdAndUpdate(
+      reservoirId,
+      { $pull: { waterLevels: { _id: entryId } } },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedReservoir) {
+      return res.status(404).json({ message: 'Reservoir not found' });
+    }
+
+    res.status(200).json({ message: 'Water level entry deleted', reservoir: updatedReservoir });
+  } catch (error) {
+    console.error('Error deleting water level entry:', error);
+    res.status(500).json({ message: 'Internal server error', error });
+  }
+});
 
 module.exports = router;
