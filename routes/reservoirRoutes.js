@@ -215,7 +215,7 @@ router.delete('/:id', authenticate, async (req, res) => {
   }
 });
 
-router.delete(':reservoirId/waterlevel/:entryId', async (req, res) => {
+router.delete('/:reservoirId/waterlevel/:entryId', async (req, res) => {
   const { reservoirId, entryId } = req.params;
 
   try {
