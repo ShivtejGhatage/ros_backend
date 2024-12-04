@@ -194,6 +194,7 @@ router.post('/subdams', async (req, res) => {
 //     }
 //   });
 
+
 router.get('/hierarchy', async (req, res) => {
   try {
     const corporations = await Corporation.find()
@@ -209,6 +210,7 @@ router.get('/hierarchy', async (req, res) => {
                 path: 'sectionOffices',
                 populate: {
                   path: 'dams',
+                  select: '_id name', // Fetch only ID and name of dams
                 },
               },
             },
@@ -216,11 +218,14 @@ router.get('/hierarchy', async (req, res) => {
         },
       });
 
-    res.status(200).json(corporations);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+      res.status(200).json(corporations);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  module.exports = router;
+
 
 router.get('/corporations', async (req, res) => {
     try {
