@@ -52,6 +52,7 @@ router.get('/user', async (req, res) => {
 
     res.json({
       username: user.username,
+      name: user.name,
       designation: user.designation,
       phoneNumber: user.phoneNumber
     });
