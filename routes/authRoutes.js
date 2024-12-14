@@ -10,6 +10,7 @@ router.post('/register', async (req, res) => {
   const { username, name, password, designation, phoneNumber } = req.body;
   try {
     const user = new User({ username, name, password, designation, phoneNumber });
+    console.log("REgistered user: ", user);
     await user.save();
     res.status(201).json({ message: 'User created successfully' });
   } catch (err) {
@@ -52,6 +53,7 @@ router.get('/user', async (req, res) => {
 
     res.json({
       username: user.username,
+      name: user.name,
       designation: user.designation,
       phoneNumber: user.phoneNumber
     });
