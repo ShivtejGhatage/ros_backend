@@ -7,9 +7,9 @@ require('dotenv').config();
 
 // Register User (Signup)
 router.post('/register', async (req, res) => {
-  const { username, password, designation, phoneNumber } = req.body;
+  const { username, name, password, designation, phoneNumber } = req.body;
   try {
-    const user = new User({ username, password, designation, phoneNumber });
+    const user = new User({ username, name, password, designation, phoneNumber });
     await user.save();
     res.status(201).json({ message: 'User created successfully' });
   } catch (err) {
@@ -50,7 +50,6 @@ router.get('/user', async (req, res) => {
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Send user data excluding sensitive information (like password)
     res.json({
       username: user.username,
       designation: user.designation,
@@ -69,12 +68,11 @@ router.put('/user/edit', async (req, res) => {
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Only update non-username fields
-    if (password) user.password = password;  // Update password if provided
-    if (designation) user.designation = designation;  // Update designation if provided
-    if (phoneNumber) user.phoneNumber = phoneNumber;  // Update phoneNumber if provided
+    if (password) user.password = password;  
+    if (designation) user.designation = designation; 
+    if (phoneNumber) user.phoneNumber = phoneNumber; 
 
-    await user.save();  // Save the updated user information
+    await user.save();  
 
     res.json({ message: 'User information updated successfully' });
   } catch (err) {

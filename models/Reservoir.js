@@ -4,8 +4,7 @@ const Schema = mongoose.Schema;
 
 const ReservoirSchema = new mongoose.Schema({
   name: { type: String, required: true , unique: true},
-  dam: { type: Schema.Types.ObjectId, ref: 'Dam', required: true },
-  subdam: { type: Schema.Types.ObjectId, ref: 'Subdam', required: true },
+  taluka: { type: Schema.Types.ObjectId, ref: 'Taluka', required: true },
   alertL: { type: Number, required: true },
   dangerL : { type: Number, required: true },
   lowL : { type: Number, required: true },

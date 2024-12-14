@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 
-const SubdamSchema = new Schema({
+const TalukaSchema = new Schema({
     name: { type: String, required: true , unique: true},
-    dam: { type: Schema.Types.ObjectId, ref: 'Dam', required: true },
+    dam: [{ type: Schema.Types.ObjectId, ref: 'Dam', required: true }],
     reservoir: [{ type: Schema.Types.ObjectId, ref: 'Reservoir' }]
   });
   
-  const Subdam = mongoose.model('Subdam', SubdamSchema);
-  module.exports = Subdam;
+  const Taluka = mongoose.model('Taluka', TalukaSchema);
+  module.exports = Taluka;
   
