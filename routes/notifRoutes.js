@@ -8,7 +8,6 @@ router.get('/', async (req, res) => {
     try {
       // Retrieve all notifications, populating reservoir details if needed
       const notifications = await Notification.find()
-        // .populate('reservoir', 'name subdam') // Populating reservoir name and subdam
         .sort({ timestamp: -1 }); // Sort by newest first
   
       res.status(200).json(notifications);

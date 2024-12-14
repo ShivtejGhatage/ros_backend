@@ -1,27 +1,9 @@
 const express = require('express');
 const Reservoir = require('../models/Reservoir');
-const ReservoirList = require('../models/Reservoirlist')
 const authenticate = require('../middleware/authMiddleware');  // Import the authentication middleware
 const router = express.Router();
 const Notification = require('../models/Notification');  // Import the Notification model
 const mongoose = require('mongoose'); // Add this import at the top of your file
-
-
-// Create a new reservoir (requires authentication)
-router.post('/', async (req, res) => {
-  try {
-    const reservoir = new Reservoir(req.body);
-    await reservoir.save();
-    const reservoirinlist = new ReservoirList(req.body);
-    await reservoirinlist.save();
-    res.status(201).json(reservoir);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-
-
 
 
 
@@ -37,10 +19,10 @@ router.get('/all', async (req, res) => {
 
 router.get('/listall', async (req, res) => {
   try {
-    const reservoirs = await ReservoirList.find();
-    res.json(reservoirs);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const reser = await Reservoir.find().select('_id name alertL dangerL lowL');
+    res.status(200).json(reser);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -55,7 +37,6 @@ router.get('/:id', async (req, res) => {
       return res.status(400).json({ message: 'Invalid reservoir ID' });
     }
 
-    // Find the reservoir by ID and populate the subdam
     const reservoir = await Reservoir.findById(reservoirId);
 
     if (!reservoir) {
@@ -77,13 +58,11 @@ router.get('/:id', async (req, res) => {
 });
 
 
-// Update water level for a reservoir (requires authentication)
 router.put('/', async (req, res) => {
   try {
-    const { name, subdam, level, timestamp, rain, username } = req.body;
+    const { name, taluka, level, timestamp, rain, username } = req.body;
 
-    // Find the existing reservoir using name and subdam
-    const reservoir = await Reservoir.findOne({ name, subdam });
+    const reservoir = await Reservoir.findOne({ name, taluka });
     if (!reservoir) {
       return res.status(404).json({ error: 'Reservoir not found' });
     }
@@ -104,7 +83,7 @@ router.put('/', async (req, res) => {
 
     reservoir.waterLevels.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-    if (previousTimestamp && new Date(timestamp) > new Date(previousTimestamp)) {
+    if (previousTimestamp && new Date(timestamp) >= new Date(previousTimestamp)) {
 
     // Check if the new level exceeds dangerL and the previous level did not
    
@@ -193,23 +172,18 @@ router.put('/', async (req, res) => {
 });
 
 // Delete a reservoir (requires authentication)
-// Delete a reservoir (requires authentication)
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     // Find the reservoir by ID
     const reservoir = await Reservoir.findById(req.params.id);
     if (!reservoir) return res.status(404).json({ error: "Reservoir not found" });
 
-    // Extract identifiers for deletion in ReservoirList
-    const { damName, subdamName, reservoirName} = reservoir;
 
     // Delete the reservoir
     await Reservoir.findByIdAndDelete(req.params.id);
 
-    // Delete the corresponding entry in ReservoirList
-    await ReservoirList.findOneAndDelete({ damName, subdamName, reservoirName });
 
-    res.json({ message: "Reservoir and corresponding entry in ReservoirList deleted" });
+    res.json({ message: "Reservoir deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
