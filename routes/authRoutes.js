@@ -64,13 +64,14 @@ router.get('/user', async (req, res) => {
 
 // Edit User Information (except for username)
 router.put('/user/edit', async (req, res) => {
-  const { username, password, designation, phoneNumber } = req.body;
+  const { username, name, password, designation, phoneNumber } = req.body;
 
   try {
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     if (password) user.password = password;  
+    if (name) user.name = name;  
     if (designation) user.designation = designation; 
     if (phoneNumber) user.phoneNumber = phoneNumber; 
 
