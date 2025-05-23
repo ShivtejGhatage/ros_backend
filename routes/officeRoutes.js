@@ -136,24 +136,32 @@ router.post('/dams', async (req, res) => {
 });
 
 router.post('/subdams', async (req, res) => {
-    try {
-      const { name, parentId } = req.body;
-      const subdam = new Subdam({ name, dam: parentId });
-  
-      // Add to the Subdivision Office's sectionOffices array
-      await subdam.save();
+  try {
+    const { name, parentId } = req.body;
+
+    // Create the Subdam; only set the dam field if parentId is provided
+    const subdam = new Subdam({
+      name,
+      ...(parentId && { dam: parentId })  // optional chaining for dam assignment
+    });
+
+    await subdam.save();
+
+    // If parentId is provided, try to find a dam and add subdam to it
+    if (parentId) {
       const dam = await Dam.findById(parentId);
-      if (!dam) {
-        return res.status(404).json({ error: "Dam not found" });
+      if (dam) {
+        dam.subdam.push(subdam._id);
+        await dam.save();
       }
-      dam.subdam.push(subdam._id);
-      await dam.save();
-  
-      res.status(201).json(subdam);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
     }
-  });
+
+    res.status(201).json(subdam);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 
   const Reservoir = require('../models/Reservoir');

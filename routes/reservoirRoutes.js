@@ -83,7 +83,7 @@ router.put('/', async (req, res) => {
     const { name, subdam, level, timestamp, rain, username } = req.body;
 
     // Find the existing reservoir using name and subdam
-    const reservoir = await Reservoir.findOne({ name, subdam });
+    const reservoir = await Reservoir.findOne({ name, subdam }).populate('sectionOffice');
     if (!reservoir) {
       return res.status(404).json({ error: 'Reservoir not found' });
     }
@@ -111,7 +111,7 @@ router.put('/', async (req, res) => {
     // Check for alert level
     if (previousLevel !== null && previousLevel <= reservoir.alertL && level > reservoir.alertL) {
       const message = `Warning: Water level in ${reservoir.name} has exceeded the alert level (${reservoir.alertL}m). Current level: ${level}m.`;
-
+      reservoir.situation = 2;
       const notification = new Notification({
         reservoir: reservoir._id,
         message,
@@ -129,7 +129,7 @@ router.put('/', async (req, res) => {
 
     if (previousLevel !== null && previousLevel <= reservoir.dangerL && level > reservoir.dangerL) {
       const message = `Warning: Water level in ${reservoir.name} has exceeded the danger level (${reservoir.dangerL}m). Current level: ${level}m.`;
-      
+      reservoir.situation = 3;
       const notification = new Notification({
         reservoir: reservoir._id,
         message,
@@ -149,7 +149,7 @@ router.put('/', async (req, res) => {
     // Check for low level
     if (previousLevel !== null && previousLevel >= reservoir.lowL && level < reservoir.lowL) {
       const message = `Warning: Water level in ${reservoir.name} has fallen below the low level (${reservoir.lowL}m). Current level: ${level}m.`;
-
+      reservoir.situation = 0;
       const notification = new Notification({
         reservoir: reservoir._id,
         message,
@@ -167,7 +167,7 @@ router.put('/', async (req, res) => {
 
     if (previousLevel !== null && ((previousLevel > reservoir.alertL || previousLevel < reservoir.lowL) && level >= reservoir.lowL && level <= reservoir.alertL)) {
       const message = `All clear: Water level in ${reservoir.name} is now between normal levels (${reservoir.lowL}m - ${reservoir.alertL}m). Current level: ${level}m.`;
-
+      reservoir.situation = 1;
       const notification = new Notification({
         reservoir: reservoir._id,
         message,

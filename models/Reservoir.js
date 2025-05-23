@@ -17,6 +17,7 @@ const ReservoirSchema = new mongoose.Schema({
       username : { type: String, required: false }
     },
   ],
+  situation : { type : Number, default: 1, required: false},
 });
 
 module.exports = mongoose.model('Reservoir', ReservoirSchema);
