@@ -7,9 +7,9 @@ require('dotenv').config();
 
 // Register User (Signup)
 router.post('/register', async (req, res) => {
-  const { username, password, designation, phoneNumber } = req.body;
+  const { username, password,name,email, designation, phoneNumber } = req.body;
   try {
-    const user = new User({ username, password, designation, phoneNumber });
+    const user = new User({ username, password, name, email, designation, phoneNumber });
     await user.save();
     res.status(201).json({ message: 'User created successfully' });
   } catch (err) {
@@ -52,9 +52,13 @@ router.get('/user', async (req, res) => {
 
     // Send user data excluding sensitive information (like password)
     res.json({
+      userid: user._id,
       username: user.username,
+      name: user.name,
+      email: user.email,
       designation: user.designation,
-      phoneNumber: user.phoneNumber
+      phoneNumber: user.phoneNumber,
+      seenNotifications: user.seenNotifications
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -63,7 +67,7 @@ router.get('/user', async (req, res) => {
 
 // Edit User Information (except for username)
 router.put('/user/edit', async (req, res) => {
-  const { username, password, designation, phoneNumber } = req.body;
+  const { username, password, name, email, designation, phoneNumber } = req.body;
 
   try {
     const user = await User.findOne({ username });
@@ -71,6 +75,8 @@ router.put('/user/edit', async (req, res) => {
 
     // Only update non-username fields
     if (password) user.password = password;  // Update password if provided
+    if (name) user.name = name;
+    if (email) user.email = email;
     if (designation) user.designation = designation;  // Update designation if provided
     if (phoneNumber) user.phoneNumber = phoneNumber;  // Update phoneNumber if provided
 
@@ -79,6 +85,35 @@ router.put('/user/edit', async (req, res) => {
     res.json({ message: 'User information updated successfully' });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+router.put('/users/:userId/seenNotifications', async (req, res) => {
+  const { userId } = req.params;
+  const { seenNotifications } = req.body;
+      console.log('Updating user', userId, 'with seenNotifications:', seenNotifications);
+
+  if (!Array.isArray(seenNotifications)) {
+    return res.status(400).json({ message: 'seenNotifications must be an array of notification IDs' });
+  }
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { seenNotifications }, // directly replace the array
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.log('Updating user', userId, 'with seenNotifications:', seenNotifications);
+
+    res.json({ message: 'Seen notifications updated', seenNotifications: user.seenNotifications });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

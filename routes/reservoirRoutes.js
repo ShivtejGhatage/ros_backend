@@ -65,6 +65,10 @@ router.get('/:id', async (req, res) => {
     // Prepare the response data with the reservoir name and water levels
     const responseData = {
       reservoirName: reservoir.name,
+      alertL: reservoir.alertL,
+      dangerL: reservoir.dangerL,
+      lowL: reservoir.lowL,
+      situation: reservoir.situation,
       waterLevels: reservoir.waterLevels
     };
 
@@ -110,7 +114,7 @@ router.put('/', async (req, res) => {
    
     // Check for alert level
     if (previousLevel !== null && previousLevel <= reservoir.alertL && level > reservoir.alertL) {
-      const message = `Warning: Water level in ${reservoir.name} has exceeded the alert level (${reservoir.alertL}m). Current level: ${level}m.`;
+      const message = `सूचना: ${reservoir.name} मधील पाण्याची पातळी इशारा पातळी (${reservoir.alertL}m) ओलांडली आहे. सध्याची पातळी: ${level}m`;
       reservoir.situation = 2;
       const notification = new Notification({
         reservoir: reservoir._id,
@@ -128,7 +132,7 @@ router.put('/', async (req, res) => {
     }
 
     if (previousLevel !== null && previousLevel <= reservoir.dangerL && level > reservoir.dangerL) {
-      const message = `Warning: Water level in ${reservoir.name} has exceeded the danger level (${reservoir.dangerL}m). Current level: ${level}m.`;
+      const message = `सूचना: ${reservoir.name} मधील पाण्याची पातळी धोक्याची पातळी ओलांडली आहे (${reservoir.dangerL}m). सध्याची पातळी: ${level}m`;
       reservoir.situation = 3;
       const notification = new Notification({
         reservoir: reservoir._id,
@@ -148,7 +152,7 @@ router.put('/', async (req, res) => {
 
     // Check for low level
     if (previousLevel !== null && previousLevel >= reservoir.lowL && level < reservoir.lowL) {
-      const message = `Warning: Water level in ${reservoir.name} has fallen below the low level (${reservoir.lowL}m). Current level: ${level}m.`;
+      const message = `सूचना: ${reservoir.name} मधील पाण्याची पातळी तळपातळी (${reservoir.lowL}m) पेक्षा कमी झाली आहे. सध्याची पातळी: ${level}m`;
       reservoir.situation = 0;
       const notification = new Notification({
         reservoir: reservoir._id,
@@ -166,7 +170,7 @@ router.put('/', async (req, res) => {
     }
 
     if (previousLevel !== null && ((previousLevel > reservoir.alertL || previousLevel < reservoir.lowL) && level >= reservoir.lowL && level <= reservoir.alertL)) {
-      const message = `All clear: Water level in ${reservoir.name} is now between normal levels (${reservoir.lowL}m - ${reservoir.alertL}m). Current level: ${level}m.`;
+      const message = `पाणी पातळी सामान्य आहे: ${reservoir.name} मधील पाण्याची पातळी आता सामान्य पातळी (${reservoir.lowL}m - ${reservoir.alertL}m) दरम्यान आहे. सध्याची पातळी: ${level}m`;
       reservoir.situation = 1;
       const notification = new Notification({
         reservoir: reservoir._id,
