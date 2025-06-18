@@ -4,7 +4,8 @@ const Schema = mongoose.Schema;
 const SectionOfficeSchema = new Schema({
     name: { type: String, required: true , unique: true},
     subdivisionOffice: { type: Schema.Types.ObjectId, ref: 'SubdivisionOffice', required: true },
-    dams: [{ type: Schema.Types.ObjectId, ref: 'Dam' }]
+    dams: [{ type: Schema.Types.ObjectId, ref: 'Dam' }],
+    reservoir: [{ type: Schema.Types.ObjectId, ref: 'Reservoir' }]
   });
   
   const SectionOffice = mongoose.model('SectionOffice', SectionOfficeSchema);

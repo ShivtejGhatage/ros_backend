@@ -5,21 +5,43 @@ const authenticate = require('../middleware/authMiddleware');  // Import the aut
 const router = express.Router();
 const Notification = require('../models/Notification');  // Import the Notification model
 const mongoose = require('mongoose'); // Add this import at the top of your file
+const Subdam = require('../models/SubDam');
+const SectionOffice = require('../models/SectionOffice');
 
 
-// Create a new reservoir (requires authentication)
+
 router.post('/', async (req, res) => {
   try {
+    // 1. Create and save the Reservoir
     const reservoir = new Reservoir(req.body);
     await reservoir.save();
+
+    // 2. Create and save the ReservoirList
     const reservoirinlist = new ReservoirList(req.body);
     await reservoirinlist.save();
-    res.status(201).json(reservoir);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
 
+    // 3. Push this reservoir's ID into its subdam's reservoir array
+    await Subdam.findByIdAndUpdate(
+      reservoir.subdam,
+      { $push: { reservoir: reservoir._id } },
+      { new: true }
+    );
+
+    // 4. Push this reservoir's ID into its sectionOffice's reservoir array
+    await SectionOffice.findByIdAndUpdate(
+      reservoir.sectionOffice,
+      { $push: { reservoirs: reservoir._id } },
+      { new: true }
+    );
+
+    res.status(201).json(reservoir);
+
+  } catch (err) {
+  console.error('POST /reservoirs error:', err);
+  res.status(400).json({ error: err.message });
+}
+
+});
 
 
 

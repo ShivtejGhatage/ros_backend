@@ -3,6 +3,7 @@ const Corporation = require('../models/Corporation');
 const router = express.Router();
 const Subdam = require('../models/SubDam');
 
+
 router.post('/corporations', async (req, res) => {
   try {
     const { name } = req.body;
@@ -386,6 +387,571 @@ router.get('/corporations', async (req, res) => {
       res.status(500).json({ error: error.message });
     }
   });
+
+    router.get('/reservoirs', async (req, res) => {
+    try {
+      const reservoirs = await Reservoir.find();
+      res.status(200).json(reservoirs);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete APIs
+
+    router.delete('/corporations/:id', async (req, res) => {
+    try {
+      const corporation = await Corporation.findById(req.params.id);
+      
+      if (!corporation) {
+        return res.status(404).json({ message: 'Corporation not found' });
+      }
+
+      if (corporation.ceOffices.length > 0) {
+        return res.status(400).json({ message: 'Cannot delete Corporation with existing CEOffices' });
+      }
+
+      await Corporation.findByIdAndDelete(req.params.id);
+      res.json({ message: 'Corporation deleted successfully' });
+
+    } catch (err) {
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  });
+
+  
+
+
+  router.delete('/ceoffices/:id', async (req, res) => {
+    try {
+      const ceOffice = await CEOffice.findById(req.params.id);
+      
+      if (!ceOffice) {
+        return res.status(404).json({ message: 'CEOffice not found' });
+      }
+
+      if (ceOffice.circleOffices.length > 0) {
+        return res.status(400).json({ message: 'Cannot delete CEOffice with existing Circle Offices' });
+      }
+
+      await Corporation.findByIdAndUpdate(ceOffice.corporation, {
+        $pull: { ceOffices: ceOffice._id }
+      });
+      await CEOffice.findByIdAndDelete(req.params.id);
+      res.json({ message: 'CEOffice deleted successfully' });
+
+    } catch (err) {
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  });
+
+
+router.delete('/circleoffices/:id', async (req, res) => {
+  try {
+    const circleoffices = await CircleOffice.findById(req.params.id);
+    
+    if (!circleoffices) {
+      return res.status(404).json({ message: 'CircleOffice not found' });
+    }
+
+    if (circleoffices.divisionOffices.length > 0) {
+      return res.status(400).json({ message: 'Cannot delete CircleOffice with existing DivisionOffices' });
+    }
+
+    await CEOffice.findByIdAndUpdate(circleoffices.ceOffice, {
+      $pull: { circleOffices: circleoffices._id }
+    });
+
+    await CircleOffice.findByIdAndDelete(req.params.id);
+    res.json({ message: 'CircleOffice deleted successfully' });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
+ router.delete('/divisionoffices/:id', async (req, res) => {
+  try {
+    const divisionoffices = await DivisionOffice.findById(req.params.id);
+    
+    if (!divisionoffices) {
+      return res.status(404).json({ message: 'DivisionOffice not found' });
+    }
+
+    if (divisionoffices.subdivisionOffices.length > 0) {
+      return res.status(400).json({ message: 'Cannot delete DivisionOffice with existing subdivisionOffices' });
+    }
+
+    await CircleOffice.findByIdAndUpdate(divisionoffices.circleOffice, {
+      $pull: { divisionOffices: divisionoffices._id }
+    });
+
+    await DivisionOffice.findByIdAndDelete(req.params.id);
+    res.json({ message: 'DivisionOffice deleted successfully' });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
+
+router.delete('/subdivisionoffices/:id', async (req, res) => {
+  try {
+    const subdivisionoffice = await SubdivisionOffice.findById(req.params.id);
+
+    if (!subdivisionoffice) {
+      return res.status(404).json({ message: 'SubdivisionOffice not found' });
+    }
+
+    // Check if any SectionOffices are linked to this SubdivisionOffice
+    const childSections = await SectionOffice.find({ subdivisionOffice: subdivisionoffice._id });
+    if (childSections.length > 0) {
+      return res.status(400).json({ message: 'Cannot delete: SubdivisionOffice has existing SectionOffices' });
+    }
+
+    // Remove reference from parent DivisionOffice
+    if (subdivisionoffice.divisionOffice) {
+      await DivisionOffice.findByIdAndUpdate(subdivisionoffice.divisionOffice, {
+        $pull: { subdivisionOffices: subdivisionoffice._id }
+      });
+    }
+
+    await SubdivisionOffice.findByIdAndDelete(req.params.id);
+    res.json({ message: 'SubdivisionOffice deleted successfully' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
+
+
+
+
+router.delete('/sectionoffices/:id', async (req, res) => {
+  try {
+    const sectionoffices = await SectionOffice.findById(req.params.id);
+    
+    if (!sectionoffices) {
+      return res.status(404).json({ message: 'SectionOffice not found' });
+    }
+
+    if (sectionoffices.dams.length > 0) {
+      return res.status(400).json({ message: 'Cannot delete SectionOffice with existing dams' });
+    }
+    if (sectionoffices.reservoir.length > 0) {
+      return res.status(400).json({ message: 'Cannot delete SectionOffice with existing reservoir' });
+    }
+
+    const ReservoirwSO = await Reservoir.findOne({ sectionOffice: req.params.id });
+    if (ReservoirwSO) {
+      return res.status(400).json({ message: 'Cannot delete SectionOffice with existing Reservoirs' });
+    }
+
+    await SubdivisionOffice.findByIdAndUpdate(sectionoffices.subDivision, {
+      $pull: { sectionOffices: sectionoffices._id }
+    });
+
+    await SectionOffice.findByIdAndDelete(req.params.id);
+    res.json({ message: 'SectionOffice deleted successfully' });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
+
+ router.delete('/dams/:id', async (req, res) => {
+  try {
+    const dams = await Dam.findById(req.params.id);
+    
+    if (!dams) {
+      return res.status(404).json({ message: 'Dam not found' });
+    }
+
+    if (dams.subdam.length > 0) {
+      return res.status(400).json({ message: 'Cannot delete Dam with existing subdam' });
+    }
+
+    await SectionOffice.findByIdAndUpdate(dams.sectionOffice, {
+      $pull: { dams: dams._id }
+    });
+
+    await Dam.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Dam deleted successfully' });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
+router.delete('/subdams/:id', async (req, res) => {
+  try {
+    const subdam = await Subdam.findById(req.params.id);
+
+    if (!subdam) {
+      return res.status(404).json({ message: 'Subdam not found' });
+    }
+
+    if (subdam.reservoir.length > 0) {
+      return res.status(400).json({ message: 'Cannot delete subdam with existing reservoirs' });
+    }
+
+    // If the subdam is linked to a dam, remove its reference from the dam
+    if (subdam.dam) {
+      await Dam.findByIdAndUpdate(subdam.dam, {
+        $pull: { subdam: subdam._id }
+      });
+    }
+
+    await Subdam.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Subdam deleted successfully' });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
+router.delete('/reservoirs/:id', async (req, res) => {
+  try {
+    // Find the reservoir by ID
+    const reservoir = await Reservoir.findById(req.params.id);
+    if (!reservoir) {
+      return res.status(404).json({ error: "Reservoir not found" });
+    }
+
+    // Extract identifying fields
+    const { name, sectionOffice, subdam } = reservoir;
+
+    // Delete the reservoir
+    await Subdam.findByIdAndUpdate(reservoir.subdam, {
+        $pull: { reservoir: reservoir._id }
+      });
+    await Reservoir.findByIdAndDelete(req.params.id);
+
+    // Delete matching entry in ReservoirList
+    await ReservoirList.findOneAndDelete({ name, sectionOffice, subdam });
+
+    res.json({ message: "Reservoir and corresponding ReservoirList entry deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+  // PUT /corporations/:id
+router.put('/corporations/:id', async (req, res) => {
+  try {
+    const { name } = req.body;
+    const updated = await Corporation.findByIdAndUpdate(
+      req.params.id,
+      { name },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ message: "Corporation not found" });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// PUT /ceoffices/:id
+router.put('/ceoffices/:id', async (req, res) => {
+  try {
+    const ceOffice = await CEOffice.findById(req.params.id);
+    if (!ceOffice) return res.status(404).json({ message: 'CEOffice not found' });
+
+    const updateFields = {};
+    if (req.body.name !== undefined) updateFields.name = req.body.name;
+
+    if (req.body.corporation && req.body.corporation !== String(ceOffice.corporation)) {
+      await Corporation.findByIdAndUpdate(ceOffice.corporation, {
+        $pull: { ceOffices: ceOffice._id }
+      });
+      await Corporation.findByIdAndUpdate(req.body.corporation, {
+        $addToSet: { ceOffices: ceOffice._id }
+      });
+      updateFields.corporation = req.body.corporation;
+    }
+
+    const updated = await CEOffice.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
+// PUT /circleoffices/:id
+router.put('/circleoffices/:id', async (req, res) => {
+  try {
+    const circleOffice = await CircleOffice.findById(req.params.id);
+    if (!circleOffice) return res.status(404).json({ message: 'CircleOffice not found' });
+
+    const updateFields = {};
+    if (req.body.name !== undefined) updateFields.name = req.body.name;
+
+    if (req.body.ceOffice && req.body.ceOffice !== String(circleOffice.ceOffice)) {
+      await CEOffice.findByIdAndUpdate(circleOffice.ceOffice, {
+        $pull: { circleOffices: circleOffice._id }
+      });
+      await CEOffice.findByIdAndUpdate(req.body.ceOffice, {
+        $addToSet: { circleOffices: circleOffice._id }
+      });
+      updateFields.ceOffice = req.body.ceOffice;
+    }
+
+    const updated = await CircleOffice.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
+// PUT /divisionoffices/:id
+router.put('/divisionoffices/:id', async (req, res) => {
+  try {
+    const divisionOffice = await DivisionOffice.findById(req.params.id);
+    if (!divisionOffice) return res.status(404).json({ message: 'DivisionOffice not found' });
+
+    const updateFields = {};
+    if (req.body.name !== undefined) updateFields.name = req.body.name;
+
+    if (req.body.circleOffice && req.body.circleOffice !== String(divisionOffice.circleOffice)) {
+      await CircleOffice.findByIdAndUpdate(divisionOffice.circleOffice, {
+        $pull: { divisionOffices: divisionOffice._id }
+      });
+      await CircleOffice.findByIdAndUpdate(req.body.circleOffice, {
+        $addToSet: { divisionOffices: divisionOffice._id }
+      });
+      updateFields.circleOffice = req.body.circleOffice;
+    }
+
+    const updated = await DivisionOffice.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
+// PUT /subdivisions/:id
+router.put('/subdivisionoffices/:id', async (req, res) => {
+  try {
+    const subDivision = await SubdivisionOffice.findById(req.params.id); // ✅ Correct model
+
+    if (!subDivision) {
+      return res.status(404).json({ message: 'SubdivisionOffice not found' });
+    }
+
+    const updateFields = {};
+
+    if (req.body.name !== undefined) {
+      updateFields.name = req.body.name;
+    }
+
+    // ✅ Check for divisionOffice change
+    if (req.body.divisionOffice && req.body.divisionOffice !== String(subDivision.divisionOffice)) {
+      // Remove from old DivisionOffice
+      await DivisionOffice.findByIdAndUpdate(subDivision.divisionOffice, {
+        $pull: { subdivisionOffices: subDivision._id } // ✅ Correct field
+      });
+
+      // Add to new DivisionOffice
+      await DivisionOffice.findByIdAndUpdate(req.body.divisionOffice, {
+        $addToSet: { subdivisionOffices: subDivision._id } // ✅ Correct field
+      });
+
+      updateFields.divisionOffice = req.body.divisionOffice;
+    }
+
+    const updated = await SubdivisionOffice.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+    res.json(updated);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
+// PUT /sectionoffices/:id
+router.put('/sectionoffices/:id', async (req, res) => {
+  try {
+    const sectionOffice = await SectionOffice.findById(req.params.id);
+    if (!sectionOffice) return res.status(404).json({ message: 'SectionOffice not found' });
+
+    const updateFields = {};
+    if (req.body.name !== undefined) updateFields.name = req.body.name;
+
+    if (req.body.subdivisionOffice && req.body.subdivisionOffice !== String(sectionOffice.subdivisionOffice)) {
+      await SubdivisionOffice.findByIdAndUpdate(sectionOffice.subdivisionOffice, {
+        $pull: { sectionOffices: sectionOffice._id }
+      });
+      await SubdivisionOffice.findByIdAndUpdate(req.body.subDivision, {
+        $addToSet: { sectionOffices: sectionOffice._id }
+      });
+      updateFields.subdivisionOffice = req.body.subdivisionOffice;
+    }
+
+    const updated = await SectionOffice.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
+
+// PUT /dams/:id
+router.put('/damsInfo/:id', async (req, res) => {
+  try {
+    const dam = await Dam.findById(req.params.id);
+    if (!dam) return res.status(404).json({ message: 'Dam not found' });
+
+    const updateFields = {};
+
+    // Optional updates
+    if (req.body.name !== undefined) updateFields.name = req.body.name;
+    if (req.body.damwater !== undefined) updateFields.damwater = req.body.damwater;
+    if (req.body.capacity !== undefined) updateFields.capacity = req.body.capacity;
+    if (req.body.capacityTMC !== undefined) updateFields.capacityTMC = req.body.capacityTMC;
+    if (req.body.subdam !== undefined) updateFields.subdam = req.body.subdam;
+
+    // Handle parent change: sectionOffice
+    if (req.body.sectionOffice && req.body.sectionOffice !== String(dam.sectionOffice)) {
+      // Remove dam from old sectionOffice
+      await SectionOffice.findByIdAndUpdate(dam.sectionOffice, {
+        $pull: { dams: dam._id }
+      });
+      // Add dam to new sectionOffice
+      await SectionOffice.findByIdAndUpdate(req.body.sectionOffice, {
+        $addToSet: { dams: dam._id }
+      });
+      updateFields.sectionOffice = req.body.sectionOffice;
+    }
+
+    // Update the dam but do not touch `data`
+    const updatedDam = await Dam.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateFields },
+      { new: true }
+    );
+
+    res.json(updatedDam);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
+
+router.put('/subdams/:id', async (req, res) => {
+  try {
+    const subdam = await Subdam.findById(req.params.id);
+    if (!subdam) return res.status(404).json({ message: 'Subdam not found' });
+
+    const updateFields = {};
+    if (req.body.name !== undefined) updateFields.name = req.body.name;
+
+    if (req.body.dam && req.body.dam !== String(subdam.dam)) {
+      await Dam.findByIdAndUpdate(subdam.dam, {
+        $pull: { subdam: subdam._id }
+      });
+      await Dam.findByIdAndUpdate(req.body.dam, {
+        $addToSet: { subdam: subdam._id }
+      });
+      updateFields.dam = req.body.dam;
+    }
+
+    const updated = await Subdam.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/reservoirsInfo/:id', async (req, res) => {
+  try {
+    const reservoir = await Reservoir.findById(req.params.id);
+    if (!reservoir) return res.status(404).json({ message: 'Reservoir not found' });
+
+    const updateFields = {};
+
+    // Optional updates (but we skip waterLevels and situation)
+    if (req.body.name !== undefined) updateFields.name = req.body.name;
+    if (req.body.alertL !== undefined) updateFields.alertL = req.body.alertL;
+    if (req.body.dangerL !== undefined) updateFields.dangerL = req.body.dangerL;
+    if (req.body.lowL !== undefined) updateFields.lowL = req.body.lowL;
+
+    // Handle sectionOffice parent switch
+    if (req.body.sectionOffice && String(req.body.sectionOffice) !== String(reservoir.sectionOffice)) {
+      await SectionOffice.findByIdAndUpdate(reservoir.sectionOffice, {
+        $pull: { reservoirs: reservoir._id }
+      });
+      await SectionOffice.findByIdAndUpdate(req.body.sectionOffice, {
+        $addToSet: { reservoirs: reservoir._id }
+      });
+      updateFields.sectionOffice = req.body.sectionOffice;
+    }
+
+    // Handle subdam parent switch
+    if (req.body.subdam && String(req.body.subdam) !== String(reservoir.subdam)) {
+      await Subdam.findByIdAndUpdate(reservoir.subdam, {
+        $pull: { reservoir: reservoir._id }
+      });
+      await Subdam.findByIdAndUpdate(req.body.subdam, {
+        $addToSet: { reservoir: reservoir._id }
+      });
+      updateFields.subdam = req.body.subdam;
+    }
+
+    // Apply update
+    const updatedReservoir = await Reservoir.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateFields },
+      { new: true }
+    );
+
+    // Update corresponding ReservoirList
+    const listUpdateFields = {
+      name: updatedReservoir.name,
+      sectionOffice: updatedReservoir.sectionOffice,
+      subdam: updatedReservoir.subdam,
+      alertL: updatedReservoir.alertL,
+      dangerL: updatedReservoir.dangerL,
+      lowL: updatedReservoir.lowL
+    };
+
+    await ReservoirList.findOneAndUpdate(
+      { name: reservoir.name }, // match original name
+      { $set: listUpdateFields },
+      { new: true }
+    );
+
+    res.json({ message: 'Reservoir updated successfully', updatedReservoir });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+
 
 
 
