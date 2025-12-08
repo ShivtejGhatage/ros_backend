@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
   seenNotifications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notification' }],
   designation: { type: String, required: true, enum: ['कार्यकारी अभियंता', 'उपविभागीय अभियंता', 'शाखा अभियंता','कालवा निरीक्षक'] },  // Can be 'admin', 'user', or 'manager' (customize as needed)
   phoneNumber: { type: String, required: true },
+  allowedReservoirs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Reservoir', index: true }],
+  allowedDams: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Dam', index: true }]
 });
 
 // Hash password before saving
