@@ -65,6 +65,30 @@ router.get('/user', async (req, res) => {
   }
 });
 
+router.get('/users', async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page ?? '1'));
+    const limit = Math.max(1, Math.min(200, parseInt(req.query.limit ?? '100'))); // cap limit
+    const skip = (page - 1) * limit;
+
+    // project only safe fields
+    const projection = 'name username email designation phoneNumber allowedReservoirs allowedDams _id';
+
+    const users = await User.find({}, projection)
+      .sort({ name: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await User.countDocuments();
+
+    res.json({ meta: { total, page, limit }, users });
+  } catch (err) {
+    console.error('GET /users error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Edit User Information (except for username)
 router.put('/user/edit', async (req, res) => {
   const { username, password, name, email, designation, phoneNumber } = req.body;
