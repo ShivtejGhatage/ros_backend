@@ -299,6 +299,18 @@ router.get('/corporations', async (req, res) => {
     }
   });
 
+  router.get('/dams/list', async (req, res) => {
+  try {
+    const dams = await Dam.find({}, '-data'); 
+    // or: Dam.find().select('-data')
+
+    res.status(200).json(dams);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
   router.get('/dams/:id', async (req, res) => {
     try {
       const damId = req.params.id; // Extract the dam ID from the request parameters
@@ -396,6 +408,18 @@ router.get('/corporations', async (req, res) => {
       res.status(500).json({ error: error.message });
     }
   });
+
+  router.get('/reservoirs/list', async (req, res) => {
+  try {
+    const reservoirs = await Reservoir.find({}, '-waterLevels'); 
+    // or: Reservoir.find().select('-waterLevels')
+
+    res.status(200).json(reservoirs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
   // Delete APIs
 
