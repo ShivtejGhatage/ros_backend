@@ -106,13 +106,21 @@ router.get('/:id', async (req, res) => {
 // Update water level for a reservoir (requires authentication)
 router.put('/', async (req, res) => {
   try {
-    const { name, subdam, level, timestamp, rain, username } = req.body;
+    const { id,name, subdam, level, timestamp, rain, username } = req.body;
 
     // Find the existing reservoir using name and subdam
-    const reservoir = await Reservoir.findOne({ name, subdam }).populate('sectionOffice');
-    if (!reservoir) {
-      return res.status(404).json({ error: 'Reservoir not found' });
+    let reservoir;
+    if (id) {
+      if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid id' });
+      reservoir = await Reservoir.findById(id).populate('sectionOffice');
+    } else if (name && subdam) {
+      reservoir = await Reservoir.findOne({ name, subdam }).populate('sectionOffice');
+    } else {
+      return res.status(400).json({ error: 'Provide id OR (name and subdam)' });
     }
+
+    if (!reservoir) return res.status(404).json({ error: 'Reservoir not found' });
+
 
     // Get the previous water level (if it exists)
     const previousLevel = reservoir.waterLevels.length > 0 
