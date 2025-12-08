@@ -1,6 +1,8 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Reservoir = require('../models/Reservoir');
+const Dam = require('../models/Dam');
 const router = express.Router();
 require('dotenv').config();
 
@@ -64,6 +66,41 @@ router.get('/user', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// GET /api/access/user/:userId/resources
+// returns { reservoirs: [...], dams: [...] } where each item has _id,name and other meta (no heavy arrays)
+router.get('/user/resources/:username', async (req, res) => {
+  const { username } = req.params;
+
+  if (!username) {
+    return res.status(400).json({ error: 'username is required' });
+  }
+
+  try {
+    const user = await User.findOne({ username })
+      .select('allowedReservoirs allowedDams')
+      .lean();
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const reservoirs = await Reservoir.find(
+      { _id: { $in: user.allowedReservoirs || [] } },
+      '-waterLevels'
+    ).lean();
+
+    const dams = await Dam.find(
+      { _id: { $in: user.allowedDams || [] } },
+      '-data'
+    ).lean();
+
+    return res.json({ reservoirs, dams });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 
 router.get('/users', async (req, res) => {
   try {
